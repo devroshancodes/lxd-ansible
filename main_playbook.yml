@@ -1,0 +1,32 @@
+---
+# Template for ansible playbook
+- name: Deploy LXC nginx Load-Balanced Stack with PostgreSQL
+  hosts: lxc_host
+  become: true
+  vars:
+   container_distro: ubuntu
+   container_release: noble #24.04 lts
+   
+   # Network Configuration
+   lxc_gateway: "10.145.169.1"
+
+   db_server: { name: 'db-01', ip: '10.145.169.133' }
+   load_balancer: { name: 'lb-01', ip: '10.145.169.177' }
+   web_servers:
+    - { name: 'web-01', ip: '10.145.169.98' }
+    - { name: 'web-02', ip: '10.145.169.213' }
+
+  tasks:
+   # Container provisioning
+    - name: Create Database Container
+      community.general.lxc_container:
+       name: "{{ db_server.name }}"
+       template: "{{ container_distro }}"
+       state: started
+       template_options: "--release {{ container_release }}"
+       container_config: 
+        - "lxc.net.0.ipv4.address = {{ db_server.ip }}/24"
+        - "lxc.net.0.ipv4.gateway = {{ lxc_gateway }}"
+- name: 
+
+...

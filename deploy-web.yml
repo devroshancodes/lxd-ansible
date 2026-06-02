@@ -1,0 +1,48 @@
+---
+    # Task 1: Configure the Load Balancer
+    - name: Configure Load Balancer
+      hosts: loadbalancers
+      tasks:
+        - name: Install Nginx
+          apt:
+            name: nginx
+            state: present
+            update_cache: yes
+
+        - name: Copy Load Balancer Configuration
+          template:
+            src: template/lb-nginx.conf
+            dest: /etc/nginx/sites-available/default
+
+        - name: Restart Nginx to apply config
+          service:
+            name: nginx
+            state: restarted
+
+    # Task 2: Configure Web Servers
+    - name: Configure Web Nodes
+      hosts: webservers
+      tasks:
+        - name: Install Nginx
+          apt:
+            name: nginx
+            state: present
+            update_cache: yes
+
+        - name: Remove default Nginx welcome file
+          file:
+            path: /var/www/html/index.nginx-debian.html
+            state: absent
+
+        - name: Create Custom HTML on Web 01
+          copy:
+            content: "<h1>Welcome to Web Node ALPHA (01)</h1>"
+            dest: /var/www/html/index.html
+          when: inventory_hostname == 'web-01'
+
+        - name: Create Custom HTML on Web 02
+          copy:
+            content: "<h1>Welcome to Web Node BETA (02)</h1>"
+            dest: /var/www/html/index.html
+          when: inventory_hostname == 'web-02'
+...
