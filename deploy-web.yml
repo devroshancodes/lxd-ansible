@@ -45,4 +45,41 @@
             content: "<h1>Welcome to Web Node BETA (02)</h1>"
             dest: /var/www/html/index.html
           when: inventory_hostname == 'web-02'
+# Task 3: Configure Database Server
+    - name: Configure Database Node
+      hosts: databases
+      become: yes
+      vars:
+       lxc_subnet: "10.0.10.0/24"
+      tasks:
+        - name: Install PostgreSQL and Python dependencies
+          apt:
+            name: 
+              - postgresql
+              - python3-psycopg2  # Required for Ansible's postgresql modules
+            state: present
+            update_cache: yes
+
+        - name: Allow PostgreSQL to listen on all interfaces
+          lineinfile:
+            path: /etc/postgresql/16/main/postgresql.conf
+            regexp: '^#?listen_addresses\s*='
+            line: "listen_addresses = '*'"
+          notify: Restart PostgreSQL
+
+        - name: Allow remote connections from LXC subnet
+          postgresql_pg_hba:
+            dest: /etc/postgresql/16/main/pg_hba.conf
+            contype: host
+            databases: all
+            method: md5
+            users: all
+            address: "{{ lxc_subnet }}"  # Replace with your actual LXC subnet
+          notify: Restart PostgreSQL
+
+      handlers:
+        - name: Restart PostgreSQL
+          service:
+            name: postgresql
+            state: restarted
 ...
